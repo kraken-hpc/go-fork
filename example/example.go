@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/jlowellwofford/go-fork"
@@ -18,5 +19,7 @@ func child(n int) {
 
 func main() {
 	fmt.Printf("main() pid: %d\n", os.Getpid())
-	fork.Fork("child", 1, 2)
+	if err := fork.Fork("child", 1); err != nil {
+		log.Fatalf("failed to fork: %v", err)
+	}
 }

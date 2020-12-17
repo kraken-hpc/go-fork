@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
-	"runtime"
 	"syscall"
 )
 
@@ -34,9 +33,10 @@ type Function struct {
 func NewFork(n string, fn interface{}) (f *Function) {
 	f = &Function{}
 	f.c = exec.Cmd{}
-	f.SysProcAttr = f.c.SysProcAttr
 	// Process and ProcessState don't actually exist at this point
-	f.c.Path = getSelfExe()
+	f.SysProcAttr = f.c.SysProcAttr
+	// os.Executable might not be the most robust way to do this, but it is portable.
+	f.c.Path, _ = os.Executable()
 	f.c.Args = []string{f.c.Path}
 	// we don't check for errors here, but it would be a pretty bad thing if this failed
 	//f.c.Args = func() []string { s, _ := ioutil.ReadFile("/proc/self/comm"); return []string{string(s)} }()
@@ -50,7 +50,9 @@ func NewFork(n string, fn interface{}) (f *Function) {
 
 // Fork starts a process and prepares it to call the defined fork
 func (f *Function) Fork(args interface{}) (err error) {
-	f.c.Env = os.Environ()
+	if err = f.validateArgs(args); err != nil {
+		return
+	}
 	f.c.Stderr = os.Stderr
 	f.c.Stdout = os.Stdout
 	f.c.Stdin = os.Stdin
@@ -69,11 +71,7 @@ func (f *Function) Fork(args interface{}) (err error) {
 	for _, iv := range is {
 		enc.EncodeValue(reflect.ValueOf(iv))
 	}
-	fmt.Println()
 	af.Close()
-	if err = f.validateArgs(args); err != nil {
-		return
-	}
 	if err = f.c.Start(); err != nil {
 		return
 	}
@@ -90,13 +88,21 @@ func (f *Function) Wait() (err error) {
 	return
 }
 
-func (f *Function) validateArgs(a interface{}) (err error) {
-	return
-}
+// private
 
-func getSelfExe() string {
-	if runtime.GOOS == "linux" {
-		return "/proc/self/exe"
+func (f *Function) validateArgs(a interface{}) (err error) {
+	is, ok := a.([]interface{})
+	t := f.fn.Type()
+	if !ok { // single arg?
+		is = []interface{}{a}
 	}
-	return os.Args[0]
+	if len(is) != t.NumIn() {
+		return fmt.Errorf("incorrect number of args for: %s", t.String())
+	}
+	for i := 0; i < t.NumIn(); i++ {
+		if t.In(i).Kind() != reflect.TypeOf(is[i]).Kind() {
+			return fmt.Errorf("argument mismatch (1) %s != %s", reflect.TypeOf(is[i]).Kind(), t.In(i).Kind())
+		}
+	}
+	return
 }

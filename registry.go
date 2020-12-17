@@ -42,14 +42,11 @@ func RegisterFunc(n string, fn interface{}) {
 // We are identified as a fork, we execute that function, and exit.
 // or, we are not identified as afork and simply return.
 func Init() {
-	fmt.Printf("fork.Init(): ")
 	var name string
 	if name = os.Getenv(nameVar); name == "" {
 		// no func is defined
-		fmt.Printf("not a fork\n")
 		return
 	}
-	fmt.Printf("a fork: %s\n", name)
 	os.Unsetenv(nameVar)
 	// we appear to be a fork
 	if f, ok := forks[name]; ok {
@@ -64,8 +61,7 @@ func Init() {
 			}
 			dec := gob.NewDecoder(f)
 			for i := 0; i < t.NumIn(); i++ {
-				v := reflect.New(t.In(i))
-				fmt.Printf("trying to decode: %s\n", t.In(i).Kind())
+				v := reflect.Indirect(reflect.New(t.In(i)))
 				err := dec.DecodeValue(v)
 				if err != nil {
 					panic("failed to decode arguments from args file: " + err.Error())
@@ -80,7 +76,6 @@ func Init() {
 			panic("fork failed: incorrect number of args supplied")
 		}
 		if err := v.Call(args); err != nil {
-			fmt.Printf("fork failed: %v\n", err)
 			os.Exit(1)
 		}
 		os.Exit(0)
