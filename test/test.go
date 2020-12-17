@@ -9,13 +9,14 @@ import (
 
 func init() {
 	fork.RegisterFunc("child", child)
-	fork.ForkInit()
+	fork.Init()
 }
 
-func child(interface{}) {
-	fmt.Printf("child() pid; %d\n", os.Getpid())
+func child(n int) {
+	fmt.Printf("child(%d) pid: %d\n", n, os.Getpid())
 }
 
 func main() {
 	fmt.Printf("main() pid: %d\n", os.Getpid())
+	fork.Fork("child", 1, 2)
 }
