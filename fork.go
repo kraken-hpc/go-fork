@@ -30,14 +30,23 @@ type Function struct {
 }
 
 // NewFork createas and initializes a Fork
-func NewFork(n string, fn interface{}) (f *Function) {
+// A Fork object can be manipluated to control how a process is launched.
+// E.g. you can set new namespaces in the SysProcAttr property...
+//      or, you can set custom args with the (optional) variatic args aparameters.
+//      If you set args, the first should be the program name (Args[0]), which may
+//		Which may or may not match the  executable.
+// If no args are specified, args is set to []string{os.Args[0]}
+func NewFork(n string, fn interface{}, args ...string) (f *Function) {
 	f = &Function{}
 	f.c = exec.Cmd{}
 	// Process and ProcessState don't actually exist at this point
 	f.SysProcAttr = f.c.SysProcAttr
 	// os.Executable might not be the most robust way to do this, but it is portable.
 	f.c.Path, _ = os.Executable()
-	f.c.Args = []string{f.c.Path}
+	f.c.Args = args
+	if len(args) == 0 {
+		f.c.Args = []string{os.Args[0]}
+	}
 	// we don't check for errors here, but it would be a pretty bad thing if this failed
 	//f.c.Args = func() []string { s, _ := ioutil.ReadFile("/proc/self/comm"); return []string{string(s)} }()
 	f.fn = reflect.ValueOf(fn)
