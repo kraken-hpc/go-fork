@@ -89,5 +89,5 @@ func Fork(name string, args ...interface{}) (err error) {
 	if !ok {
 		return fmt.Errorf("no registered function by name: %s", name)
 	}
-	return f.Fork(args)
+	return f.Fork(args...)
 }

@@ -58,7 +58,7 @@ func NewFork(n string, fn interface{}, args ...string) (f *Function) {
 }
 
 // Fork starts a process and prepares it to call the defined fork
-func (f *Function) Fork(args interface{}) (err error) {
+func (f *Function) Fork(args ...interface{}) (err error) {
 	if err = f.validateArgs(args); err != nil {
 		return
 	}
@@ -73,11 +73,7 @@ func (f *Function) Fork(args interface{}) (err error) {
 		return
 	}
 	enc := gob.NewEncoder(af)
-	is, ok := args.([]interface{})
-	if !ok {
-		is = []interface{}{args}
-	}
-	for _, iv := range is {
+	for _, iv := range args {
 		enc.EncodeValue(reflect.ValueOf(iv))
 	}
 	af.Close()
@@ -99,18 +95,14 @@ func (f *Function) Wait() (err error) {
 
 // private
 
-func (f *Function) validateArgs(a interface{}) (err error) {
-	is, ok := a.([]interface{})
+func (f *Function) validateArgs(args ...interface{}) (err error) {
 	t := f.fn.Type()
-	if !ok { // single arg?
-		is = []interface{}{a}
-	}
-	if len(is) != t.NumIn() {
+	if len(args) != t.NumIn() {
 		return fmt.Errorf("incorrect number of args for: %s", t.String())
 	}
 	for i := 0; i < t.NumIn(); i++ {
-		if t.In(i).Kind() != reflect.TypeOf(is[i]).Kind() {
-			return fmt.Errorf("argument mismatch (1) %s != %s", reflect.TypeOf(is[i]).Kind(), t.In(i).Kind())
+		if t.In(i).Kind() != reflect.TypeOf(args[i]).Kind() {
+			return fmt.Errorf("argument mismatch (1) %s != %s", reflect.TypeOf(args[i]).Kind(), t.In(i).Kind())
 		}
 	}
 	return
