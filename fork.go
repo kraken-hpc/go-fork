@@ -59,7 +59,7 @@ func NewFork(n string, fn interface{}, args ...string) (f *Function) {
 
 // Fork starts a process and prepares it to call the defined fork
 func (f *Function) Fork(args ...interface{}) (err error) {
-	if err = f.validateArgs(args); err != nil {
+	if err = f.validateArgs(args...); err != nil {
 		return
 	}
 	f.c.Stderr = os.Stderr
