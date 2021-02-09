@@ -23,6 +23,12 @@ type Function struct {
 	ProcessState *os.ProcessState
 	// Name is the string we use to identify this func
 	Name string
+	// Where to send stdout (default: os.Stdout)
+	Stdout *os.File
+	// Where to send stderr (default: os.Stderr)
+	Stderr *os.File
+	// Where to get stdin (default: os.Stdin)
+	Stdin *os.File
 
 	// contains filtered or unexported fields
 	c  exec.Cmd
@@ -44,6 +50,9 @@ func NewFork(n string, fn interface{}, args ...string) (f *Function) {
 	// os.Executable might not be the most robust way to do this, but it is portable.
 	f.c.Path, _ = os.Executable()
 	f.c.Args = args
+	f.c.Stderr = os.Stderr
+	f.c.Stdout = os.Stdout
+	f.c.Stdin = os.Stdin
 	if len(args) == 0 {
 		f.c.Args = []string{os.Args[0]}
 	}
@@ -62,9 +71,9 @@ func (f *Function) Fork(args ...interface{}) (err error) {
 	if err = f.validateArgs(args...); err != nil {
 		return
 	}
-	f.c.Stderr = os.Stderr
-	f.c.Stdout = os.Stdout
-	f.c.Stdin = os.Stdin
+	f.c.Stderr = f.Stderr
+	f.c.Stdout = f.Stdout
+	f.c.Stdin = f.Stdin
 	f.c.Env = os.Environ()
 	f.c.Env = append(f.c.Env, nameVar+"="+f.Name)
 	af, err := ioutil.TempFile("", "gofork_*")
