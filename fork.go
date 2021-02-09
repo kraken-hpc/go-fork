@@ -45,8 +45,6 @@ type Function struct {
 func NewFork(n string, fn interface{}, args ...string) (f *Function) {
 	f = &Function{}
 	f.c = exec.Cmd{}
-	// Process and ProcessState don't actually exist at this point
-	f.SysProcAttr = f.c.SysProcAttr
 	// os.Executable might not be the most robust way to do this, but it is portable.
 	f.c.Path, _ = os.Executable()
 	f.c.Args = args
@@ -74,6 +72,7 @@ func (f *Function) Fork(args ...interface{}) (err error) {
 	f.c.Stderr = f.Stderr
 	f.c.Stdout = f.Stdout
 	f.c.Stdin = f.Stdin
+	f.c.SysProcAttr = f.SysProcAttr
 	f.c.Env = os.Environ()
 	f.c.Env = append(f.c.Env, nameVar+"="+f.Name)
 	af, err := ioutil.TempFile("", "gofork_*")
