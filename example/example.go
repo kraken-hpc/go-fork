@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jlowellwofford/go-fork"
+	"github.com/kraken-hpc/go-fork"
 )
 
 func init() {
