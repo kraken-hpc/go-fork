@@ -92,6 +92,35 @@ func (f *Function) Fork(args ...interface{}) (err error) {
 	return
 }
 
+// Combine NewFork and Fork with previous function configuration
+func (f *Function) ReFork(args ...interface{}) (err error) {
+	previous := f.c
+	f.c = exec.Cmd{}
+	f.c.Path, _ = os.Executable()
+	f.c.Args = previous.Args
+	f.c.Stderr = f.Stderr
+	f.c.Stdout = f.Stdout
+	f.c.Stdin = f.Stdin
+	f.c.SysProcAttr = f.SysProcAttr
+	f.c.Env = os.Environ()
+	f.c.Env = append(f.c.Env, nameVar+"="+f.Name)
+	af, err := ioutil.TempFile("", "gofork_*")
+	f.c.Env = append(f.c.Env, argsVar+"="+af.Name())
+	if err != nil {
+		return
+	}
+	enc := gob.NewEncoder(af)
+	for _, iv := range args {
+		enc.EncodeValue(reflect.ValueOf(iv))
+	}
+	af.Close()
+	if err = f.c.Start(); err != nil {
+		return
+	}
+	f.Process = f.c.Process
+	return
+}
+
 // Wait provides a wrapper around exec.Cmd.Wait()
 func (f *Function) Wait() (err error) {
 	if err = f.c.Wait(); err != nil {
